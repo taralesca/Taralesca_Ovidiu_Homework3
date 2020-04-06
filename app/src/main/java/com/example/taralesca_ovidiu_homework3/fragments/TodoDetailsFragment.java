@@ -2,44 +2,35 @@ package com.example.taralesca_ovidiu_homework3.fragments;
 
 import android.app.AlarmManager;
 import android.app.DatePickerDialog;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.TimePickerDialog;
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.graphics.Camera;
-import android.os.Build;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.DatePicker;
 import android.widget.TextView;
-import android.widget.TimePicker;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
-import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Lifecycle;
 
 import com.example.taralesca_ovidiu_homework3.R;
 import com.example.taralesca_ovidiu_homework3.model.Todo;
 import com.example.taralesca_ovidiu_homework3.util.AlarmReceiver;
 
-import org.w3c.dom.Text;
-
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Locale;
 
-import static android.content.ContentValues.TAG;
+import static android.app.AlarmManager.RTC;
 import static android.content.Context.ALARM_SERVICE;
+import static java.util.Calendar.DAY_OF_MONTH;
+import static java.util.Calendar.HOUR_OF_DAY;
+import static java.util.Calendar.MINUTE;
+import static java.util.Calendar.MONTH;
+import static java.util.Calendar.YEAR;
 
 public class TodoDetailsFragment extends Fragment {
     private Todo todo;
@@ -49,8 +40,7 @@ public class TodoDetailsFragment extends Fragment {
     private int selectedMonth;
     private int selectedDay;
 
-
-    public TodoDetailsFragment(Todo todo) {
+    TodoDetailsFragment(Todo todo) {
         this.todo = todo;
     }
 
@@ -64,77 +54,75 @@ public class TodoDetailsFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        TextView button1 = (TextView) view.findViewById(R.id.button1);
-        TextView button2 = (TextView) view.findViewById(R.id.button2);
+        final TextView setTimeButton = view.findViewById(R.id.set_time_button);
+        final TextView setDateButton = view.findViewById(R.id.set_date_button);
+        final TextView setNotificationButton = view.findViewById(R.id.set_notification_button);
+        final TextView textView = view.findViewById(R.id.time);
+        final TextView dateTextView = view.findViewById(R.id.date);
 
-        TextView textView = (TextView) view.findViewById(R.id.time);
-        button1.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Calendar mcurrentTime = Calendar.getInstance();
-                selectedHour = mcurrentTime.get(Calendar.HOUR_OF_DAY);
-                selectedMinute = mcurrentTime.get(Calendar.MINUTE);
-                TimePickerDialog mTimePicker;
-                mTimePicker = new TimePickerDialog(getContext(), new TimePickerDialog.OnTimeSetListener() {
-                    @Override
-                    public void onTimeSet(TimePicker timePicker, int sh, int sm) {
-                        textView.setText( selectedHour + ":" + selectedMinute);
-                        selectedHour = sh;
-                        selectedMinute = sm;
-                    }
-                }, selectedHour, selectedMinute, true);//Yes 24 hour time
-                mTimePicker.setTitle("Select Time");
-                mTimePicker.show();
+        setTimeButton.setOnClickListener(v -> launchTimePicker(textView));
+        setDateButton.setOnClickListener(v -> launchDatePicker(dateTextView));
+        setNotificationButton.setOnClickListener(v -> setAlarmForNotification());
+    }
 
-            }
-        });
+    private void setAlarmForNotification() {
+        final AlarmManager alarmManager = (AlarmManager) getContext().getSystemService(ALARM_SERVICE);
+        final Intent intent = new Intent(getContext(), AlarmReceiver.class);
+        intent.putExtra("message", todo.getTitle());
+        final PendingIntent pendingIntent = PendingIntent
+                .getBroadcast(getContext(), 101, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        TextView dateTextView = (TextView) view.findViewById(R.id.date);
-        button2.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Calendar mcurrentTime = Calendar.getInstance();
-                selectedYear = mcurrentTime.get(Calendar.YEAR);
-                selectedMonth = mcurrentTime.get(Calendar.MONTH);
-                selectedDay = mcurrentTime.get(Calendar.DAY_OF_MONTH);
-                DatePickerDialog mTimePicker;
-                mTimePicker = new DatePickerDialog(getContext(), new DatePickerDialog.OnDateSetListener() {
-                    @Override
-                    public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
-                        dateTextView.setText(dayOfMonth + "." + month + "." + year);
-                    }
-                }, selectedYear, selectedMonth, selectedDay);//Yes 24 hour time
-                mTimePicker.setTitle("Select Date");
-                mTimePicker.show();
-            }
-        });
+        final Calendar calendar = Calendar.getInstance();
+        calendar.set(selectedYear, selectedMonth, selectedDay);
+        calendar.set(HOUR_OF_DAY, selectedHour);
+        calendar.set(MINUTE, selectedMinute);
 
-        TextView button3 = (TextView) view.findViewById(R.id.button3);
-        button3.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+        alarmManager.set(RTC, calendar.getTimeInMillis(), pendingIntent);
 
-                AlarmManager alarmManager = (AlarmManager) getContext().getSystemService(ALARM_SERVICE);
+        Toast.makeText(getContext(), R.string.successful_notification_message, Toast.LENGTH_LONG).show();
+    }
 
-                Intent intent = new Intent(getContext(), AlarmReceiver.class);
+    private void launchDatePicker(TextView dateTextView) {
+        final Calendar selectedDate = Calendar.getInstance();
+        selectedYear = selectedDate.get(YEAR);
+        selectedMonth = selectedDate.get(MONTH);
+        selectedDay = selectedDate.get(DAY_OF_MONTH);
 
-                PendingIntent pendingIntent = PendingIntent.getBroadcast(getContext(), 101, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        final SimpleDateFormat dateFormat = new SimpleDateFormat(getString(R.string.date_format), Locale.US);
 
-                Calendar calendar = Calendar.getInstance();
-                calendar.set(selectedYear, selectedMonth, selectedDay);
-                calendar.set(Calendar.HOUR_OF_DAY, selectedHour);
-                calendar.set(Calendar.MINUTE, selectedMinute);
-/*
-Alarm will be triggered once exactly at 5:30
-*/
-                if (calendar.getTimeInMillis() < System.currentTimeMillis()) {
-                    Log.d(TAG, "onClick: YOU ARE WRONG");
-                }
-                alarmManager.set(AlarmManager.RTC, calendar.getTimeInMillis(), pendingIntent);
+        final DatePickerDialog datePicker =
+                new DatePickerDialog(getContext(),
+                        (view, pickedYear, pickedMonth, pickedDay) -> {
+                            this.selectedDay = pickedDay;
+                            this.selectedMonth = pickedMonth;
+                            this.selectedYear = pickedYear;
+                            selectedDate.set(pickedYear, pickedMonth, pickedDay);
+                            dateTextView.setText(dateFormat.format(selectedDate.getTime()));
+                        },
+                        selectedYear, selectedMonth, selectedDay);
+        datePicker.setTitle(getString(R.string.set_date_button));
+        datePicker.show();
+    }
 
+    private void launchTimePicker(TextView timeTextView) {
+        final Calendar selectedTime = Calendar.getInstance();
+        selectedHour = selectedTime.get(HOUR_OF_DAY);
+        selectedMinute = selectedTime.get(MINUTE);
 
-            }
-        });
+        final SimpleDateFormat timeFormat = new SimpleDateFormat(getString(R.string.time_format), Locale.US);
+
+        final TimePickerDialog timePicker =
+                new TimePickerDialog(getContext(),
+                        (view, pickedHour, pickedMinute) -> {
+                            this.selectedHour = pickedHour;
+                            this.selectedMinute = pickedMinute;
+                            selectedTime.set(HOUR_OF_DAY, pickedHour);
+                            selectedTime.set(MINUTE, pickedMinute);
+                            timeTextView.setText(timeFormat.format(selectedTime.getTime()));
+                        },
+                        selectedHour, selectedMinute, true);
+        timePicker.setTitle(getString(R.string.set_time_button));
+        timePicker.show();
     }
 
 

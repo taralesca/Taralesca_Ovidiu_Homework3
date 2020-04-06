@@ -54,6 +54,7 @@ public class User {
     public User fromJSON(JSONObject data) throws JSONException {
         this.id = data.getInt("id");
         this.name = data.getString("name");
+        this.username = data.getString("username");
         this.email = data.getString("email");
         return this;
     }

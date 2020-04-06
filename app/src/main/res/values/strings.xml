@@ -1,3 +1,13 @@
 <resources>
     <string name="app_name">Taralesca_Ovidiu_Homework3</string>
+    <string name="notification_title">ToDo Notification</string>
+    <string name="successful_notification_message">Notification created successfully!</string>
+    <string name="set_time_button">Select Time</string>
+    <string name="set_date_button">Select Date</string>
+    <string name="users_endpoint_down">Cannot fetch users!</string>
+    <string name="invalid_user_data">Invalid user data</string>
+    <string name="users_endpoint_url">https://my-json-server.typicode.com/MoldovanG/JsonServer/users</string>
+    <string name="date_format">dd.MM.yyyy</string>
+    <string name="time_format">HH:mm</string>
+    <string name="user_card_format">Name: %s\nUsername: %s\nEmail %s</string>
 </resources>
